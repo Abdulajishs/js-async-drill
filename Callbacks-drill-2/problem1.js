@@ -3,61 +3,59 @@ const path = require('path');
 
 let dirPath = path.join(__dirname, 'jsonFiles');
 
-async function createDir() {
-    try {
-        await fsPromises.mkdir(dirPath, { recursive: true })
+function createDir() {
+    return fsPromises.mkdir(dirPath, { recursive: true }).then(() => {
         console.log("Directory is created");
-    } catch (error) {
+    }).catch((error) => {
         console.log("Error creating dir", error)
-    }
+    })
 }
-async function createMultipleFiles() {
-    try {
-        for (let i = 0; i < 5; i++) {
-            let fileName = `file_${Math.floor(Math.random() * 100)}.json`;
-            let data = JSON.stringify({ name: 'random', id: 1 + i });
 
-            await fsPromises.writeFile(path.join(dirPath, fileName), data);
+function createMultipleFiles() {
+    let createFilePromises = [];
+    for (let i = 0; i < 5; i++) {
+        let fileName = `file_${Math.floor(Math.random() * 100)}.json`;
+        let data = JSON.stringify({ name: 'random', id: 1 + i });
+
+        let promise = fsPromises.writeFile(path.join(dirPath, fileName), data).then(() => {
             console.log(`${fileName} is created`)
-        }
-    } catch (error) {
-        console.log('Error creating json files', error)
+        }).catch((err) => {
+            console.log(err);
+
+        })
+
+        createFilePromises.push(promise)
     }
-}
-async function deleteFiles() {
-    try {
-        let files = await fsPromises.readdir(dirPath);
-        for (let file of files) {
-            let filePath = path.join(dirPath, file)
-            await fsPromises.unlink(filePath);
-            console.log(`${file} is deleted`);
-        }
-    } catch (error) {
-        console.log('Error deleting files', error)
-    }
-}
-async function deleteDirectory() {
-    try {
-        await fsPromises.rm(dirPath, { recursive: true });
-        console.log('Directory deleted successfully')
-    } catch (error) {
-        console.log("Error deleting directory", error)
-    }
+    return Promise.all(createFilePromises).then(() => {
+        console.log("All files are created")
+    }).catch((err) => {
+        console.log(err)
+    })
 }
 
-module.exports = async function createAndDeleteFiles() {
-    try {
-        await createDir();
 
-        await createMultipleFiles();
+function deleteFiles() {
+    return fsPromises.readdir(dirPath).then((files) => {
+        let deletePromises = files.map((file) => {
+            return fsPromises.unlink(path.join(dirPath, file)).then(() => {
+                console.log(`${file} is deleted`);
+            }).catch((err) => {
+                console.log(err);
 
-        await deleteFiles();
+            })
+        })
+        return Promise.all(deletePromises)
+    }).then(() => {
+        console.log("All files are deleted");
+    }).catch((err) => {
+        console.log(err);
 
-        await deleteDirectory();
-
-        console.log('All files are created and deleted')
-
-    } catch (error) {
-        console.log(error)
-    }
+    })
 }
+
+module.exports = {
+    createDir,
+    createMultipleFiles,
+    deleteFiles,
+};
+

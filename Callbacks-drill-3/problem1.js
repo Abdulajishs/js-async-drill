@@ -1,35 +1,45 @@
 const fs = require('fs');
 const path = require('path');
-let dirPath = path.join(__dirname, 'jsonFiles') 
+let dirPath = path.join(__dirname, 'jsonFiles')
 
 function createDir() {
     return new Promise((resolve, reject) => {
-        fs.mkdir(dirPath, (err) => {
-            if (err && err.code !== 'EEXIST') {
+        fs.mkdir(dirPath, {recursive : true} ,(err) => {
+            if (err) {
                 console.log("Error creating directory", err);
-                return
+                return reject(err)
             }
+            resolve('directory is created')
         })
-        resolve('directory is created')
     })
 }
 
 function createMultiplefiles() {
     return new Promise((resolve, reject) => {
+        let promises = [];
         for (let i = 0; i < 5; i++) {
             let fileName = `file_${Math.floor(Math.random() * 1000)}.json`
             let filePath = path.join(__dirname, 'jsonFiles', fileName);
             let data = JSON.stringify({ user: 'Random', id: i + 1 });
 
-            fs.writeFile(filePath, data, (err) => {
-                if (err) {
-                    console.log(err);
-                    return
-                }
-                console.log('File is created', fileName)
-            })
+            promises.push(
+                 new Promise((res, rej) => {
+                    fs.writeFile(filePath, data, (err) => {
+                        if (err) {
+                            console.log(err);
+                            return rej(err)
+                        }
+                        console.log('File is created', fileName);
+                        res()
+                    })
+                })
+            )
         }
-        resolve('All files are created')
+        Promise.all(promises).then(() => {
+            resolve('All files are created')
+        }).catch((err) => {
+            reject(err)
+        })
     })
 }
 
@@ -38,30 +48,43 @@ function readAndDeleteFiles() {
         fs.readdir(dirPath, (err, files) => {
             if (err) {
                 console.log('Error reading ', err)
-                return
+                return reject(err)
             }
 
-            files.forEach((file) => {
-                fs.unlink(path.join(__dirname, 'jsonFiles', file), (err) => {
-                    if (err) {
-                        console.log("Error deleting", err);
-                        return
-                    }
-                    console.log(`${file} deleted`)
+            let deletePromises = files.map((file) => {
+                return new Promise((res, rej) => {
+                    fs.unlink(path.join(__dirname, 'jsonFiles', file), (err) => {
+                        if (err) {
+                            console.log("Error deleting", err);
+                            return rej(err)
+                        }
+                        console.log(`${file} deleted`)
+                        res()
+                    })
                 })
             })
-        })           
-        resolve('All files are deleted')
+
+            Promise.all(deletePromises).then(() => {
+                resolve('All files are deleted')
+            }).catch((err) => {
+                reject(err)
+            })
+
         })
+    })
 }
 
-module.exports =  async function createAndDeleteFiles(params) {
+module.exports = async function createAndDeleteFiles() {
     try {
-        await createDir();
-
-        await createMultiplefiles();
-
-        await readAndDeleteFiles();
+        let dir = await createDir();
+        console.log(dir);
+        
+        let createMsg = await createMultiplefiles();
+        console.log(createMsg);
+        
+        let deletedMsg = await readAndDeleteFiles();
+        console.log(deletedMsg);
+        
 
     } catch (error) {
         console.log(error)

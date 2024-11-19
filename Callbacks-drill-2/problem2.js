@@ -2,97 +2,87 @@ const fsPromises = require('fs/promises')
 const path = require('path');
 
 let filenamesPath = path.join(__dirname, 'filenames.txt')
-async function readFile() {
-    try {
-        let fileContent = await fsPromises.readFile(path.join(__dirname, 'lipsum.txt'), 'utf-8')
+function readFile() {
+    return fsPromises.readFile(path.join(__dirname, 'lipsum.txt'), 'utf-8').then((fileContent) => {
+        console.log("file read successfully")
         return fileContent
-    } catch (error) {
+    }).catch((error) => {
         console.error('Error in readFile:', error);
-    }
+    })
 }
 
-async function covertAndStoreFilename(fileContent) {
-    try {
-        let uppercase = fileContent.toUpperCase();
-        let newFile = 'uppercaseContent.txt'
-        await fsPromises.writeFile(path.join(__dirname, newFile), uppercase);
-
-        await fsPromises.appendFile(filenamesPath, `${newFile}\n`)
-
+function convertAndStoreFilename(fileContent) {
+    let uppercase = fileContent.toUpperCase();
+    let newFile = 'uppercaseContent.txt';
+    return fsPromises.writeFile(path.join(__dirname, newFile), uppercase).then(()=>{
+        console.log("Uppercase file is created");
+        return fsPromises.appendFile(filenamesPath, `${newFile}\n`)
+    }).then(()=>{
+        console.log("Uppercase filename added");
         return newFile
-    } catch (error) {
+    }).catch((error)=>{
         console.error('Error in covertAndStoreFilename:', error);
-    }
-
+    })
 }
 
-async function createSentenceFile(filename) {
-    try {
-        let fileContent = await fsPromises.readFile(path.join(__dirname, filename))
+function createSentenceFile(filename) {
+    let newFile = 'sentences.txt';
+    return fsPromises.readFile(path.join(__dirname, filename)).then((fileContent)=>{
         let sentences = fileContent.toString().toLowerCase().split(".").join("\n")
-
-        let newFile = 'sentences.txt';
-        await fsPromises.writeFile(path.join(__dirname, newFile), sentences);
-
-        await fsPromises.appendFile(filenamesPath, `${newFile}\n`);
-
-        console.log('sentences file is created');
-        
+        return fsPromises.writeFile(path.join(__dirname, newFile), sentences);
+    }).then(()=>{
+        return fsPromises.appendFile(filenamesPath, `${newFile}\n`);
+    }).then(()=>{
+        console.log("sentences file is appended");
         return newFile
-    } catch (error) {
+    }).catch((error)=>{
         console.error('Error in createSentenceFile:', error);
-    }
+    })
 }
 
-async function createSortFile(filename) {
-    try {
-        let fileContent = await fsPromises.readFile(path.join(__dirname, filename))
+
+function createSortFile(filename) {
+    let newFile = 'sorted.txt';
+    return fsPromises.readFile(path.join(__dirname, filename)).then((fileContent)=>{
         let sortContent = fileContent.toString().split('\n').sort().join('\n');
-
-        let newFile = 'sorted.txt';
-        await fsPromises.writeFile(path.join(__dirname, newFile), sortContent);
-
-        await fsPromises.appendFile(filenamesPath, `${newFile}\n`);
-
-        console.log('sort file is created')
-    } catch (error) {
+        return fsPromises.writeFile(path.join(__dirname, newFile), sortContent);
+    }).then(()=>{
+        return fsPromises.appendFile(filenamesPath, `${newFile}\n`);
+    }).then(()=>{
+        console.log('Sort file create and added to filename')
+    }).catch((error)=>{
         console.error('Error in createSortFile:', error);
-    }
-
+    })
 }
 
-async function deleteFiles() {
-    try {
-        let files = await fsPromises.readFile(filenamesPath);
 
-        let filesList = files.toString().split('\n').filter((file)=>file.trim() !== '');
-        for (let i = 0; i < filesList.length; i++) {
-            try {
-                await fsPromises.unlink(path.join(__dirname, filesList[i]))
-                console.log(`${filesList[i]} is deleted`);
-            } catch (error) {
-                console.error(`Error deleting file ${filesList[i]}:`, err);
-            }
-        }
-    } catch (error) {
+function deleteFiles() {
+    return fsPromises.readFile(filenamesPath).then((files)=>{
+        let filesList = files.toString().split('\n').filter((file) => file.trim() !== '');
+
+        let deletePromises = filesList.map((file)=>{
+            fsPromises.unlink(path.join(__dirname, file)).then(()=>{
+                console.log(`${file} is deleted`);
+            }).catch((error)=>{
+                console.log(`Error deleting file ${file}:`, error);
+            })
+        })
+
+        return Promise.all(deletePromises)
+    }).then(()=>{
+        console.log("All files are deleted")
+    }).catch((error)=>{
         console.error('Error in deleteFiles:', error);
-    }
+    })
 }
 
-module.exports = async function processFiles() {
-    try {
-        let fileContent = await readFile();
+module.exports = {
+    readFile,
+    convertAndStoreFilename,
+    createSentenceFile,
+    createSortFile,
+    deleteFiles
+};
 
-        let uppercaseFile = await covertAndStoreFilename(fileContent);
 
-        let sentencesFile = await createSentenceFile(uppercaseFile);
-
-        await createSortFile(sentencesFile);
-
-        await deleteFiles()
-    } catch (error) {
-        console.log(error)
-    }
-
-}
 

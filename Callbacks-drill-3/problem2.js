@@ -9,7 +9,7 @@ function readLipsum() {
             }
             console.log('Successfully read lipsum.txt');
             let upperCaseData = data.toString().toUpperCase()
-            resolve(upperCaseData)  
+            resolve(upperCaseData)
         })
     })
 }
@@ -85,21 +85,29 @@ function deleteFiles() {
             }
             let filesToDelete = filesList.toString().trim().split('\n');
 
-            Promise.all(
-                filesToDelete.map((file) => {
-                    return new Promise((res, rej) => {
-                        fs.unlink(path.join(__dirname,file), (err) => {
-                            if (err) {
-                                return rej(err)
-                            }
-                            console.log(`${file} is deleted`);
-                            res()
-                        })
+
+            let deletePromises = filesToDelete.map((file) => {
+                return new Promise((res, rej) => {
+                    fs.unlink(path.join(__dirname, file), (err) => {
+                        if (err) {
+                            return rej(err)
+                        }
+                        console.log(`${file} is deleted`);
+                        res()
                     })
                 })
-            )
-            .then(()=>resolve("All Files are deleted"))
-            .catch(reject)
+            })
+            Promise.all(deletePromises)
+                .then(() => {
+                    fs.unlink(path.join(__dirname,'filename.txt'),(err)=>{
+                        if (err) {
+                            return reject(err)
+                        }
+                        resolve("All Files are deleted")
+                    })
+                })
+
+                .catch(reject)
         })
     })
 }
