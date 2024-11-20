@@ -4,7 +4,7 @@ let dirPath = path.join(__dirname, 'jsonFiles')
 
 function createDir() {
     return new Promise((resolve, reject) => {
-        fs.mkdir(dirPath, {recursive : true} ,(err) => {
+        fs.mkdir(dirPath, { recursive: true }, (err) => {
             if (err) {
                 console.log("Error creating directory", err);
                 return reject(err)
@@ -14,7 +14,7 @@ function createDir() {
     })
 }
 
-function createMultiplefiles() {
+function createMultipleFiles() {
     return new Promise((resolve, reject) => {
         let promises = [];
         for (let i = 0; i < 5; i++) {
@@ -23,7 +23,7 @@ function createMultiplefiles() {
             let data = JSON.stringify({ user: 'Random', id: i + 1 });
 
             promises.push(
-                 new Promise((res, rej) => {
+                new Promise((res, rej) => {
                     fs.writeFile(filePath, data, (err) => {
                         if (err) {
                             console.log(err);
@@ -74,20 +74,35 @@ function readAndDeleteFiles() {
     })
 }
 
-module.exports = async function createAndDeleteFiles() {
-    try {
-        let dir = await createDir();
-        console.log(dir);
-        
-        let createMsg = await createMultiplefiles();
-        console.log(createMsg);
-        
-        let deletedMsg = await readAndDeleteFiles();
-        console.log(deletedMsg);
-        
+module.exports = function createAndDeleteFiles() {
+    createDir()
+        .then((dirMessage) => {
+            console.log(dirMessage);
+            return createMultipleFiles();
+        })
+        .then((createMessage) => {
+            console.log(createMessage);
+            return readAndDeleteFiles();
+        })
+        .then((deleteMessage) => {
+            console.log(deleteMessage);
+        })
+        .catch((error) => {
+            console.log('Error in createAndDeleteFiles:', error);
+        });
+    // try {
+    //     let dir = await createDir();
+    //     console.log(dir);
 
-    } catch (error) {
-        console.log(error)
-    }
+    //     let createMsg = await createMultiplefiles();
+    //     console.log(createMsg);
+
+    //     let deletedMsg = await readAndDeleteFiles();
+    //     console.log(deletedMsg);
+
+
+    // } catch (error) {
+    //     console.log(error)
+    // }
 }
 

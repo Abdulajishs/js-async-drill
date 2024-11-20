@@ -112,14 +112,31 @@ function deleteFiles() {
     })
 }
 
-module.exports = async function processFiles() {
-    try {
-        let data = await readLipsum();
-        console.log(await convertAndStoreFilenames(data))
-        console.log(await createSentenceAndStoreFilename())
-        console.log(await createAndStoreSortFilename())
-        console.log(await deleteFiles())
-    } catch (error) {
-        console.log(error)
-    }
+module.exports = function processFiles() {
+    readLipsum()
+    .then((data)=>{
+        return convertAndStoreFilenames(data)
+    }).then((message)=>{
+        console.log(message);
+        return createSentenceAndStoreFilename()
+    }).then((message)=>{
+        console.log(message);
+        return createAndStoreSortFilename()
+    }).then((message)=>{
+        console.log(message);
+        return deleteFiles()
+    }).then((message)=>{
+        console.log(message);
+    }).catch((err)=>{
+        console.log(err)
+    })
+    // try {
+    //     let data = await readLipsum();
+    //     console.log(await convertAndStoreFilenames(data))
+    //     console.log(await createSentenceAndStoreFilename())
+    //     console.log(await createAndStoreSortFilename())
+    //     console.log(await deleteFiles())
+    // } catch (error) {
+    //     console.log(error)
+    // }
 }
